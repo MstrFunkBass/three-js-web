@@ -3,6 +3,8 @@ import './style.css'
 import * as THREE from 'three';
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const scene = new THREE.Scene();
 
@@ -18,8 +20,32 @@ camera.position.setZ(30);
 
 renderer.render(scene, camera);
 
-const geometry = new THREE.TorusGeometry(10,3,16,100);
 const material = new THREE.MeshStandardMaterial({color: 0xFF6347});
+
+const objLoader = new OBJLoader()
+objLoader.load(
+    'models/hello_world.obj',
+    function( obj ){
+      obj.traverse( function( child ) {
+          if ( child instanceof THREE.Mesh ) {
+              child.material = material;
+          }
+      } );
+      obj.scale.set(2,2,2);
+      scene.add( obj );
+  },
+    (xhr) => {
+        console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
+    },
+    (error) => {
+        console.log(error)
+    }
+)
+
+
+
+
+const geometry = new THREE.TorusGeometry(12,3,16,100);
 const torus = new THREE.Mesh(geometry, material);
 
 scene.add(torus);
@@ -36,13 +62,54 @@ scene.add(lightHelper, gridHelper);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 
+Array(45).fill().forEach(addPeacock);
+
+function addPeacock() {
+  
+  const [x, y, z] = Array(3).fill().map(() => THREE.MathUtils.randFloatSpread(100));
+  //const [x, y, z] = Array(3).fill().map(() => THREE.MathUtils.randFloatSpread(100));
+
+  const gltfLoader = new GLTFLoader();
+  gltfLoader.load(
+  	// resource URL
+  	'models/peacock.glb',
+  	// called when the resource is loaded
+  	function ( gltf ) {
+      const model = gltf.scene;
+      model.position.set(x,y,z)
+      model.rotation.set(x,y,z)
+  		scene.add( model );
+
+  		gltf.animations; // Array<THREE.AnimationClip>
+  		gltf.scene; // THREE.Group
+  		gltf.scenes; // Array<THREE.Group>
+  		gltf.cameras; // Array<THREE.Camera>
+  		gltf.asset; // Object
+      gltf.position
+
+  	},
+  	// called while loading is progressing
+  	function ( xhr ) {
+
+  		console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+
+  	},
+  	// called when loading has errors
+  	function ( error ) {
+
+  		console.log( 'An error happened' );
+
+  	}
+  );
+  
+}
 
 function animate(){
   requestAnimationFrame(animate);
 
   torus.rotation.x += 0.01;
-  torus.rotation.y += 0.005;
-  torus.rotation.z += 0.002;
+  torus.rotation.y += 0.02;
+  torus.rotation.z += 0.02;
 
   controls.update();
 
