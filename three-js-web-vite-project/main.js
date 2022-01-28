@@ -8,6 +8,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const scene = new THREE.Scene();
 
+const cameraMin = 25
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
 const renderer = new THREE.WebGLRenderer({
@@ -16,7 +17,7 @@ const renderer = new THREE.WebGLRenderer({
 
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
-camera.position.setZ(30);
+camera.position.setZ(cameraMin);
 
 renderer.render(scene, camera);
 
@@ -32,6 +33,7 @@ objLoader.load(
           }
       } );
       obj.scale.set(2,2,2);
+      obj.name = 'hello';
       scene.add( obj );
   },
     (xhr) => {
@@ -41,9 +43,6 @@ objLoader.load(
         console.log(error)
     }
 )
-
-
-
 
 const geometry = new THREE.TorusGeometry(12,3,16,100);
 const torus = new THREE.Mesh(geometry, material);
@@ -58,16 +57,18 @@ scene.add(pointLight, ambientLight);
 
 const lightHelper = new THREE.PointLightHelper(pointLight);
 const gridHelper = new THREE.GridHelper(200, 50);
-scene.add(lightHelper, gridHelper);
+//scene.add(lightHelper, gridHelper);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 
 Array(45).fill().forEach(addPeacock);
 
+const spaceTexture = new THREE.TextureLoader().load('images/space.jpg');
+scene.background = spaceTexture;
+
 function addPeacock() {
   
   const [x, y, z] = Array(3).fill().map(() => THREE.MathUtils.randFloatSpread(100));
-  //const [x, y, z] = Array(3).fill().map(() => THREE.MathUtils.randFloatSpread(100));
 
   const gltfLoader = new GLTFLoader();
   gltfLoader.load(
@@ -78,6 +79,7 @@ function addPeacock() {
       const model = gltf.scene;
       model.position.set(x,y,z)
       model.rotation.set(x,y,z)
+      model.name = 'peacock'
   		scene.add( model );
 
   		gltf.animations; // Array<THREE.AnimationClip>
@@ -86,6 +88,7 @@ function addPeacock() {
   		gltf.cameras; // Array<THREE.Camera>
   		gltf.asset; // Object
       gltf.position
+      
 
   	},
   	// called while loading is progressing
@@ -103,6 +106,34 @@ function addPeacock() {
   );
   
 }
+
+var lastScroll = 0;
+
+function moveCamera() {
+
+  const t = document.body.getBoundingClientRect().top;
+
+  if (t > -0.1){
+    scene.getObjectByName('hello', true).rotation.y = 0;
+    scene.getObjectByName('hello', true).rotation.x = 0;
+  }else if (lastScroll > t){
+    scene.getObjectByName('hello', true).rotation.y += 0.02;
+    scene.getObjectByName('hello', true).rotation.x += 0.01;
+  }else {
+    scene.getObjectByName('hello', true).rotation.y -= 0.02;
+    scene.getObjectByName('hello', true).rotation.x -= 0.01;
+  }
+  
+
+
+  camera.position.z = cameraMin + (t * -0.1);
+  camera.position.x = (t * -0.02);
+
+  lastScroll = t;
+  
+}
+
+document.body.onscroll = moveCamera
 
 function animate(){
   requestAnimationFrame(animate);
