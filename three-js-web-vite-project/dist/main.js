@@ -63,7 +63,7 @@ const controls = new OrbitControls(camera, renderer.domElement);
 
 Array(45).fill().forEach(addPeacock);
 
-const spaceTexture = new THREE.TextureLoader().load('images/space.jpg');
+const spaceTexture = new THREE.TextureLoader().load('static/space.jpg');
 scene.background = spaceTexture;
 
 function addPeacock() {
