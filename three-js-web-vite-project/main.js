@@ -1,30 +1,47 @@
 import './style.css'
-
 import * as THREE from 'three';
-
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Curves } from 'three/examples/jsm/curves/CurveExtras';
 
+//Set up scene
 const scene = new THREE.Scene();
-
-const cameraMin = 25
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-
 const renderer = new THREE.WebGLRenderer({
   canvas: document.querySelector('#bg'),
 })
 
+/*====SOME VARIABLES====*/
+//Set camera start and minimum value
+const cameraMin = 25
+const material = new THREE.MeshStandardMaterial({color: 0xFF6347});
+const objLoader = new OBJLoader()
+const controls = new OrbitControls(camera, renderer.domElement);
+var lastScroll = 0;
+
+//Set up Renderer and render the scene/camera
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
+
 camera.position.setZ(cameraMin);
 
 renderer.render(scene, camera);
 
-const material = new THREE.MeshStandardMaterial({color: 0xFF6347});
+/*LIGHTS*/
+const pointLight = new THREE.PointLight(0xffffff);
+pointLight.position.set(5, 5, 5);
 
-const objLoader = new OBJLoader()
+const ambientLight = new THREE.AmbientLight(0xffffff);
+scene.add(pointLight, ambientLight);
+
+const lightHelper = new THREE.PointLightHelper(pointLight);
+const gridHelper = new THREE.GridHelper(200, 50);
+//scene.add(lightHelper, gridHelper);
+
+/*====LOAD MODELS====*/
+
+//Hello World Object
 objLoader.load(
     'models/hello_world.obj',
     function( obj ){
@@ -45,28 +62,15 @@ objLoader.load(
     }
 )
 
+//Torus
 const geometry = new THREE.TorusGeometry(12,3,16,100);
 const torus = new THREE.Mesh(geometry, material);
-
 scene.add(torus);
 
-const pointLight = new THREE.PointLight(0xffffff);
-pointLight.position.set(5, 5, 5);
-
-const ambientLight = new THREE.AmbientLight(0xffffff);
-scene.add(pointLight, ambientLight);
-
-const lightHelper = new THREE.PointLightHelper(pointLight);
-const gridHelper = new THREE.GridHelper(200, 50);
-//scene.add(lightHelper, gridHelper);
-
-const controls = new OrbitControls(camera, renderer.domElement);
-
+//Random Peacocks
 Array(200).fill().forEach(addPeacock);
 
-const spaceTexture = new THREE.TextureLoader().load('static/space.jpg');
-scene.background = spaceTexture;
-
+//Granny Knot
 const grannyCurve = new Curves.GrannyKnot();
 const grannyGeo = new THREE.TubeBufferGeometry(grannyCurve, 100, 2, 8, true)
 const grannyMaterial = new THREE.MeshBasicMaterial({color : 0xf9f9f9, wireframe : true, side : THREE.DoubleSide});
@@ -74,6 +78,14 @@ const grannyMaterial = new THREE.MeshBasicMaterial({color : 0xf9f9f9, wireframe 
 const tube = new THREE.Mesh(grannyGeo, grannyMaterial);
 tube.scale.set(7,7,7)
 scene.add(tube)
+
+//Background
+const spaceTexture = new THREE.TextureLoader().load('static/space.jpg');
+scene.background = spaceTexture;
+
+/*====FUNCTIONS====*/
+
+document.body.onscroll = moveCamera
 
 function addPeacock() {
   
@@ -117,8 +129,6 @@ function addPeacock() {
   
 }
 
-var lastScroll = 0;
-
 function moveCamera() {
 
   const t = document.body.getBoundingClientRect().top;
@@ -142,8 +152,6 @@ function moveCamera() {
   lastScroll = t;
   
 }
-
-document.body.onscroll = moveCamera
 
 function animate(){
   requestAnimationFrame(animate);
