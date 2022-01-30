@@ -73,7 +73,7 @@ function addPeacock() {
   const gltfLoader = new GLTFLoader();
   gltfLoader.load(
   	// resource URL
-  	'models/peacock.glb',
+  	'models/peacock2.glb',
   	// called when the resource is loaded
   	function ( gltf ) {
       const model = gltf.scene;
