@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Curves } from 'three/examples/jsm/curves/CurveExtras';
+import { TubeBufferGeometry } from 'three';
 
 //Set up scene
 const scene = new THREE.Scene();
@@ -19,6 +20,8 @@ const material = new THREE.MeshStandardMaterial({color: 0xFF6347});
 const objLoader = new OBJLoader()
 const controls = new OrbitControls(camera, renderer.domElement);
 var lastScroll = 0;
+var clock = new THREE.Clock();
+const cameraSpeed = 0.002;
 
 //Set up Renderer and render the scene/camera
 renderer.setPixelRatio(window.devicePixelRatio);
@@ -72,11 +75,12 @@ Array(200).fill().forEach(addPeacock);
 
 //Granny Knot
 const grannyCurve = new Curves.GrannyKnot();
-const grannyGeo = new THREE.TubeBufferGeometry(grannyCurve, 100, 2, 8, true)
+const grannyGeo = new THREE.TubeBufferGeometry(grannyCurve, 150, 2, 8, true);
 const grannyMaterial = new THREE.MeshBasicMaterial({color : 0xf9f9f9, wireframe : true, side : THREE.DoubleSide});
 
 const tube = new THREE.Mesh(grannyGeo, grannyMaterial);
-tube.scale.set(7,7,7)
+// tube.scale.set(7,7,7)
+
 scene.add(tube)
 
 //Background
@@ -129,25 +133,57 @@ function addPeacock() {
   
 }
 
+var pathStart = 0;
+const pathEnd = 1;
+
+function updateCamera(dir){
+
+  if (pathStart > 1){
+    pathStart = 0
+  } else if (pathStart < 0){
+    pathStart = 0
+  }
+
+  console.log(pathStart)
+
+  // const time = clock.getElapsedTime();
+  // const looptime = 200;
+  // const t = (time % looptime)/looptime;
+  // const t2 = ((time + 0.1) % looptime)/looptime;
+
+  const pos = tube.geometry.parameters.path.getPointAt(pathStart);
+  const pos2 = tube.geometry.parameters.path.getPointAt(pathStart+0.01);
+
+  camera.position.copy(pos);
+  camera.lookAt(pos2);
+
+  if (dir > 0 ){
+    pathStart -= cameraSpeed;
+  } else {
+    pathStart += cameraSpeed;
+  }
+  
+  
+
+}
+
 function moveCamera() {
 
   const t = document.body.getBoundingClientRect().top;
 
-  if (t > -0.1){
-    scene.getObjectByName('hello', true).rotation.y = 0;
-    scene.getObjectByName('hello', true).rotation.x = 0;
-  }else if (lastScroll > t){
+  const diff = t - lastScroll
+  updateCamera(diff);
+
+  if (diff>0){
     scene.getObjectByName('hello', true).rotation.y += 0.02;
     scene.getObjectByName('hello', true).rotation.x += 0.01;
-  }else {
+  } else {
     scene.getObjectByName('hello', true).rotation.y -= 0.02;
     scene.getObjectByName('hello', true).rotation.x -= 0.01;
   }
-  
 
-
-  camera.position.z = cameraMin + (t * -0.1);
-  camera.position.x = (t * -0.02);
+  // camera.position.z = cameraMin + (t * -0.1);
+  // camera.position.x = (t * -0.02);
 
   lastScroll = t;
   
@@ -159,8 +195,8 @@ function animate(){
   torus.rotation.x += 0.01;
   torus.rotation.y += 0.02;
   torus.rotation.z += 0.02;
-
-  controls.update();
+  
+  // controls.update();
 
   renderer.render(scene, camera);
 }
