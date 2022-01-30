@@ -8,39 +8,42 @@ import { TubeBufferGeometry } from 'three';
 
 //Set up scene
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({
   canvas: document.querySelector('#bg'),
 })
+const gltfLoader = new GLTFLoader();
+const objLoader = new OBJLoader()
 
 /*====SOME VARIABLES====*/
 //Set camera start and minimum value
 const cameraMin = 25
 const material = new THREE.MeshStandardMaterial({color: 0xFF6347});
-const objLoader = new OBJLoader()
+
 const controls = new OrbitControls(camera, renderer.domElement);
 var lastScroll = 0;
 var clock = new THREE.Clock();
-const cameraSpeed = 0.002;
+const cameraSpeed = 0.00008;
 
 //Set up Renderer and render the scene/camera
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 
-camera.position.setZ(cameraMin);
+
 
 renderer.render(scene, camera);
 
 /*LIGHTS*/
-const pointLight = new THREE.PointLight(0xffffff);
+const pointLight = new THREE.PointLight(0xeeeeee);
 pointLight.position.set(5, 5, 5);
 
-const ambientLight = new THREE.AmbientLight(0xffffff);
+const ambientLight = new THREE.AmbientLight(0xe0e0e0);
 scene.add(pointLight, ambientLight);
 
 const lightHelper = new THREE.PointLightHelper(pointLight);
 const gridHelper = new THREE.GridHelper(200, 50);
-//scene.add(lightHelper, gridHelper);
+const axisHelper = new THREE.AxisHelper(5);
+//scene.add(lightHelper, gridHelper, axisHelper);
 
 /*====LOAD MODELS====*/
 
@@ -80,8 +83,49 @@ const grannyMaterial = new THREE.MeshBasicMaterial({color : 0xf9f9f9, wireframe 
 
 const tube = new THREE.Mesh(grannyGeo, grannyMaterial);
 // tube.scale.set(7,7,7)
+//scene.add(tube)
 
-scene.add(tube)
+camera.position.copy(tube.geometry.parameters.path.getPointAt(0));
+camera.lookAt(tube.geometry.parameters.path.getPointAt(0.01));
+
+//Known Collagen Sachet
+  gltfLoader.load(
+  	// resource URL
+  	'models/known-collagen.glb',
+  	// called when the resource is loaded
+  	function ( gltf ) {
+      const model = gltf.scene;
+      model.position.set(-30,-4.5,-10)
+      //model.position.set(0,0,0)
+      model.rotation.set(-(0.2*3.1415),-(2.1*3.1415),0)
+      model.scale.set(4,4,4)
+      model.name = 'known-collagen'
+  		scene.add( model );
+
+  		gltf.animations; // Array<THREE.AnimationClip>
+  		gltf.scene; // THREE.Group
+  		gltf.scenes; // Array<THREE.Group>
+  		gltf.cameras; // Array<THREE.Camera>
+  		gltf.asset; // Object
+      gltf.position
+      
+
+  	},
+  	// called while loading is progressing
+  	function ( xhr ) {
+
+  		console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+
+  	},
+  	// called when loading has errors
+  	function ( error ) {
+
+  		console.log( 'An error happened' );
+
+  	}
+  );
+
+
 
 //Background
 const spaceTexture = new THREE.TextureLoader().load('static/space.jpg');
@@ -95,7 +139,6 @@ function addPeacock() {
   
   const [x, y, z] = Array(3).fill().map(() => THREE.MathUtils.randFloatSpread(400));
 
-  const gltfLoader = new GLTFLoader();
   const peacockModels = ['models/peacock.glb', 'models/peacock2.glb'];
   gltfLoader.load(
   	// resource URL
@@ -132,60 +175,53 @@ function addPeacock() {
   );
   
 }
+var cameraSpeedMod;
 
-var pathStart = 0;
-const pathEnd = 1;
+function updateCamera(){
 
-function updateCamera(dir){
 
-  if (pathStart > 1){
-    pathStart = 0
-  } else if (pathStart < 0){
-    pathStart = 0
-  }
 
-  console.log(pathStart)
+  const t = document.body.getBoundingClientRect().top;
 
   // const time = clock.getElapsedTime();
   // const looptime = 200;
   // const t = (time % looptime)/looptime;
   // const t2 = ((time + 0.1) % looptime)/looptime;
 
-  const pos = tube.geometry.parameters.path.getPointAt(pathStart);
-  const pos2 = tube.geometry.parameters.path.getPointAt(pathStart+0.01);
+  const cameraPoint = (((t*-1)*(cameraSpeed)))
+
+  const pos = tube.geometry.parameters.path.getPointAt(cameraPoint+0.001);
+  const pos2 = tube.geometry.parameters.path.getPointAt(cameraPoint+0.01);
 
   camera.position.copy(pos);
   camera.lookAt(pos2);
 
-  if (dir > 0 ){
-    pathStart -= cameraSpeed;
-  } else {
-    pathStart += cameraSpeed;
-  }
-  
-  
+}
 
+function getDistance(mesh1, mesh2) { 
+  var dx = mesh1.position.x - mesh2.position.x; 
+  var dy = mesh1.position.y - mesh2.position.y; 
+  var dz = mesh1.position.z - mesh2.position.z; 
+  return Math.sqrt(dx*dx+dy*dy+dz*dz); 
 }
 
 function moveCamera() {
 
-  const t = document.body.getBoundingClientRect().top;
+  // const known = scene.getObjectByName('known-collagen');
 
-  const diff = t - lastScroll
-  updateCamera(diff);
+  // console.log(getDistance(known, camera));
 
-  if (diff>0){
-    scene.getObjectByName('hello', true).rotation.y += 0.02;
-    scene.getObjectByName('hello', true).rotation.x += 0.01;
-  } else {
-    scene.getObjectByName('hello', true).rotation.y -= 0.02;
-    scene.getObjectByName('hello', true).rotation.x -= 0.01;
-  }
+  // //const t = document.body.getBoundingClientRect().top;
+
+  // if (getDistance(known, camera) < 10){
+   
+  // } else {
+    
+  // }
+  updateCamera();
 
   // camera.position.z = cameraMin + (t * -0.1);
   // camera.position.x = (t * -0.02);
-
-  lastScroll = t;
   
 }
 
