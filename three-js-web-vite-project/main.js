@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { Curves } from 'three/examples/jsm/curves/CurveExtras';
 
 const scene = new THREE.Scene();
 
@@ -61,19 +62,28 @@ const gridHelper = new THREE.GridHelper(200, 50);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 
-Array(45).fill().forEach(addPeacock);
+Array(200).fill().forEach(addPeacock);
 
 const spaceTexture = new THREE.TextureLoader().load('static/space.jpg');
 scene.background = spaceTexture;
 
+const grannyCurve = new Curves.GrannyKnot();
+const grannyGeo = new THREE.TubeBufferGeometry(grannyCurve, 100, 2, 8, true)
+const grannyMaterial = new THREE.MeshBasicMaterial({color : 0xf9f9f9, wireframe : true, side : THREE.DoubleSide});
+
+const tube = new THREE.Mesh(grannyGeo, grannyMaterial);
+tube.scale.set(7,7,7)
+scene.add(tube)
+
 function addPeacock() {
   
-  const [x, y, z] = Array(3).fill().map(() => THREE.MathUtils.randFloatSpread(100));
+  const [x, y, z] = Array(3).fill().map(() => THREE.MathUtils.randFloatSpread(400));
 
   const gltfLoader = new GLTFLoader();
+  const peacockModels = ['models/peacock.glb', 'models/peacock2.glb'];
   gltfLoader.load(
   	// resource URL
-  	'models/peacock2.glb',
+  	peacockModels[Math.floor(Math.random()*peacockModels.length)],
   	// called when the resource is loaded
   	function ( gltf ) {
       const model = gltf.scene;
